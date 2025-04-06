@@ -1,5 +1,4 @@
-
-using System;
+癤퓎sing System;
 using UnityEngine;
 
 public class Test : MonoBehaviour
@@ -7,7 +6,8 @@ public class Test : MonoBehaviour
     public float speed;
     public GameObject[] weapons;
     public bool[] hasWeapons;
-    float hAxis;   //전역변수 선언
+
+    float hAxis;
     float vAxis;
     bool wDown;
     bool jDown;
@@ -20,21 +20,22 @@ public class Test : MonoBehaviour
     bool isDodge;
     bool isSwap;
 
-    Vector3 moveVec;    //위 두 개를 합쳐서 만들거
+    Vector3 moveVec;
     Vector3 dodgeVec;
 
     Rigidbody rigid;
-
     Animator anim;
+
     GameObject nearObject;
     GameObject equipWeapon;
+    int equipWeaponIndex = -1;
+
     void Awake()
     {
         rigid = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
     }
-    
-    // Update is called once per frame
+
     void Update()
     {
         GetInput();
@@ -48,14 +49,14 @@ public class Test : MonoBehaviour
 
     void GetInput()
     {
-        hAxis = Input.GetAxisRaw("Horizontal"); 
+        hAxis = Input.GetAxisRaw("Horizontal");
         vAxis = Input.GetAxisRaw("Vertical");
         wDown = Input.GetButton("Walk");
         jDown = Input.GetButtonDown("Jump");
-        iDown = Input.GetKeyDown(KeyCode.E);    //Input.Manager 문제(프로젝트 문제일수도있음)
-        sDown1 = Input.GetButtonDown("Swap1");
-        sDown2 = Input.GetButtonDown("Swap2");
-        sDown3 = Input.GetButtonDown("Swap3");
+        iDown = Input.GetKeyDown(KeyCode.E);
+        sDown1 = Input.GetKeyDown(KeyCode.Alpha1);
+        sDown2 = Input.GetKeyDown(KeyCode.Alpha2);
+        sDown3 = Input.GetKeyDown(KeyCode.Alpha3);
     }
 
     void Move()
@@ -64,6 +65,10 @@ public class Test : MonoBehaviour
 
         if (isDodge)
             moveVec = dodgeVec;
+
+        if (isSwap)
+            moveVec = Vector3.zero;
+
         transform.position += moveVec * speed * (wDown ? 0.3f : 1f) * Time.deltaTime;
 
         anim.SetBool("isRun", moveVec != Vector3.zero);
@@ -77,9 +82,9 @@ public class Test : MonoBehaviour
 
     void Jump()
     {
-        if (jDown && moveVec == Vector3.zero && !isJump && !isDodge)
+        if (jDown && moveVec == Vector3.zero && !isJump && !isDodge && !isSwap)
         {
-            rigid.AddForce(Vector3.up * 15, ForceMode.Impulse); //프로젝트 설정 -> 물리 -> 중력
+            rigid.AddForce(Vector3.up * 15, ForceMode.Impulse);
             anim.SetBool("isJump", true);
             anim.SetTrigger("doJump");
             isJump = true;
@@ -88,14 +93,14 @@ public class Test : MonoBehaviour
 
     void Dodge()
     {
-        if (jDown &&moveVec != Vector3.zero && !isJump && !isDodge)
+        if (jDown && moveVec != Vector3.zero && !isJump && !isDodge && !isSwap)
         {
             dodgeVec = moveVec;
-            speed *= 2; 
+            speed *= 2;
             anim.SetTrigger("doDodge");
             isDodge = true;
 
-            Invoke("DodgeOut", 0.5f);   //함수로 시간차 함수 호출
+            Invoke("DodgeOut", 0.5f);
         }
     }
 
@@ -107,18 +112,32 @@ public class Test : MonoBehaviour
 
     void Swap()
     {
+        if (sDown1 && (!hasWeapons[0] || equipWeaponIndex == 0))
+            return;
+        if (sDown2 && (!hasWeapons[1] || equipWeaponIndex == 1))
+            return;
+        if (sDown3 && (!hasWeapons[2] || equipWeaponIndex == 2))
+            return;
+
         int weaponIndex = -1;
         if (sDown1) weaponIndex = 0;
         if (sDown2) weaponIndex = 1;
         if (sDown3) weaponIndex = 2;
 
-        if ((sDown1 || sDown2 || sDown3) && !isJump && !isDodge)  //OR조건
-
+        if ((sDown1 || sDown2 || sDown3) && !isJump && !isDodge)
         {
-            if (equipWeapon != null)
+            if (equipWeapon)
                 equipWeapon.SetActive(false);
+
             equipWeapon = weapons[weaponIndex];
-            equipWeapon.SetActive(true);
+            equipWeaponIndex = weaponIndex;
+
+            if (equipWeapon)
+                equipWeapon.SetActive(true);
+
+            anim.SetTrigger("doSwap");
+            isSwap = true;
+            Invoke("SwapOut", 0.4f);
         }
     }
 
@@ -127,37 +146,42 @@ public class Test : MonoBehaviour
         isSwap = false;
     }
 
-    void Interation()   
+    void Interation()
     {
-        Debug.Log("iDown: " + iDown);   //iDown의 입력방식을 바꿈
+        Debug.Log("iDown: " + iDown);
         Debug.Log("nearObject: " + nearObject);
-        if (iDown && nearObject != null && !isJump && !isDodge) //input Manager문제?
+
+        if (iDown && nearObject != null && !isJump && !isDodge)
         {
-            
             if (nearObject.tag == "Weapon")
             {
-                
                 Item item = nearObject.GetComponent<Item>();
                 int weaponIndex = item.value;
                 hasWeapons[weaponIndex] = true;
 
-                Destroy(nearObject);    //현재 가지고 있는 아이템 제거
+                if (equipWeapon == nearObject)
+                {
+                    equipWeapon = null;
+                    equipWeaponIndex = -1;
+                }
+
+                Destroy(nearObject);
             }
-            
         }
     }
+
     void OnCollisionEnter(Collision collision)
     {
-        if(collision.gameObject.tag == "Floor")
+        if (collision.gameObject.tag == "Floor")
         {
             anim.SetBool("isJump", false);
             isJump = false;
         }
     }
 
-    void OnTriggerStay(Collider other)  //내가 누군가와 트리거가 실행되는 동안 
+    void OnTriggerStay(Collider other)
     {
-        if (other.tag == "Weapon")  //상대의 태그가 Weapon일때, 상대의 gameObject를 nearObject라는 변수 넣어
+        if (other.tag == "Weapon")
             nearObject = other.gameObject;
 
         Debug.Log(nearObject.name);
@@ -167,8 +191,5 @@ public class Test : MonoBehaviour
     {
         if (other.tag == "Weapon")
             nearObject = null;
-    
     }
-
 }
-
