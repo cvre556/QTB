@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class Weapon : MonoBehaviour
 {
@@ -7,8 +8,15 @@ public class Weapon : MonoBehaviour
     public Type type;
     public int damage;
     public float rate;
+    public int maxAmmo;
+    public int curAmmo;
+
     public BoxCollider meleeArea;
     public TrailRenderer trailEffect;
+    public Transform bulletPos;
+    public GameObject bullet;
+    public Transform bulletCasePos;
+    public GameObject bulletCase;
 
     public void Use()
     {
@@ -17,21 +25,42 @@ public class Weapon : MonoBehaviour
             StopCoroutine("Swing");
             StartCoroutine("Swing");
         }
+        else if (type == Type.Range && curAmmo > 0)
+        {
+            curAmmo--;
+            StartCoroutine("Shot");
+        }
     }
 
-    IEnumerator Swing() //IEnumerator: ø≠∞≈«¸ «‘ºˆ ≈¨∑°Ω∫
+    IEnumerator Swing() //IEnumerator: Ïó¥Í±∞Ìòï Ìï®Ïàò ÌÅ¥ÎûòÏä§
     {
         //1
-        yield return new WaitForSeconds(0.1f); //0.1√  ¥Î±‚
+        yield return new WaitForSeconds(0.1f); //0.1Ï¥à ÎåÄÍ∏∞
         meleeArea.enabled = true;
         trailEffect.enabled = true;
         //2
-        yield return new WaitForSeconds(0.3f); //0.3√  ¥Î±‚
+        yield return new WaitForSeconds(0.3f); //0.3Ï¥à ÎåÄÍ∏∞
         meleeArea.enabled = false;
         //3
         yield return new WaitForSeconds(0.3f);
         trailEffect.enabled = false;
     }
-    //Use() ∏ﬁ¿Œ∑Á∆æ -> Swing() º≠∫Í∑Á∆æ -> Use ∏ﬁ¿Œ∑Á∆æ
-    //Use() ∏ﬁ¿Œ∑Á∆æ+Swing() ƒ⁄∑Á∆æ (Co-Op)
+    //Use() Î©îÏù∏Î£®Ìã¥ -> Swing() ÏÑúÎ∏åÎ£®Ìã¥ -> Use Î©îÏù∏Î£®Ìã¥
+    //Use() Î©îÏù∏Î£®Ìã¥+Swing() ÏΩîÎ£®Ìã¥ (Co-Routine)
+
+    IEnumerator Shot()
+    {
+        //#1. Ï¥ùÏïå Î∞úÏÇ¨
+        GameObject intantBullet = Instantiate(bullet, bulletPos.position, bulletPos.rotation);
+        Rigidbody bulletRigid = intantBullet.GetComponent<Rigidbody>();
+        bulletRigid.linearVelocity = bulletPos.forward * 50;
+
+        yield return null;
+        //#2. ÌÉÑÌîº Î∞∞Ï∂ú
+        GameObject intantCase = Instantiate(bulletCase, bulletCasePos.position, bulletCasePos.rotation);
+        Rigidbody CaseRigid = intantCase.GetComponent<Rigidbody>();
+        Vector3 caseVec = bulletCasePos.forward * Random.Range(-3, -2) + Vector3.up * Random.Range(2, 3);
+        CaseRigid.AddForce(caseVec, ForceMode.Impulse);
+        CaseRigid.AddTorque(Vector3.up * 10, ForceMode.Impulse);
+    }
 }

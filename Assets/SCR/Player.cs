@@ -12,6 +12,7 @@ public class Test : MonoBehaviour
     public int coin;
     public int health;
     public int hasGrenades;
+    public Camera followCamera;
 
     public int maxAmmo;
     public int maxCoin;
@@ -24,6 +25,7 @@ public class Test : MonoBehaviour
     bool wDown;
     bool jDown;
     bool fDown;
+    bool rDown;
     bool iDown;
     bool sDown1;
     bool sDown2;
@@ -32,6 +34,7 @@ public class Test : MonoBehaviour
     bool isJump;
     bool isDodge;
     bool isSwap;
+    bool isReload;
     bool isFireReady = true;
 
     Vector3 moveVec;
@@ -58,6 +61,7 @@ public class Test : MonoBehaviour
         Turn();
         Jump();
         Attack();
+        Reload();
         Dodge();
         Interation();
         Swap();
@@ -69,7 +73,8 @@ public class Test : MonoBehaviour
         vAxis = Input.GetAxisRaw("Vertical");
         wDown = Input.GetButton("Walk");
         jDown = Input.GetButtonDown("Jump");
-        fDown = Input.GetButtonDown("Fire1");
+        fDown = Input.GetButton("Fire1");
+        rDown = Input.GetButtonDown("Reload");
         iDown = Input.GetKeyDown(KeyCode.E);
         sDown1 = Input.GetKeyDown(KeyCode.Alpha1);
         sDown2 = Input.GetKeyDown(KeyCode.Alpha2);
@@ -83,7 +88,7 @@ public class Test : MonoBehaviour
         if (isDodge)
             moveVec = dodgeVec;
 
-        if (isSwap || !isFireReady)
+        if (isSwap || isReload || !isFireReady)
             moveVec = Vector3.zero;
 
         transform.position += moveVec * speed * (wDown ? 0.3f : 1f) * Time.deltaTime;
@@ -94,9 +99,22 @@ public class Test : MonoBehaviour
 
     void Turn()
     {
+        //#1.키보드에 의한 회전
         transform.LookAt(transform.position + moveVec);
-    }
 
+        //#2.마우스에 의한 회전
+        if (fDown)
+        {
+            Ray ray = followCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit ratHit;
+            if (Physics.Raycast(ray, out ratHit, 100))
+            {
+                Vector3 nextVec = ratHit.point - transform.position;
+                nextVec.y = 0;
+                transform.LookAt(transform.position + nextVec);
+            }
+        }
+    }
     void Jump()
     {
         if (jDown && moveVec == Vector3.zero && !isJump && !isDodge && !isSwap)
@@ -119,9 +137,36 @@ public class Test : MonoBehaviour
         if(fDown && isFireReady && !isDodge && !isSwap)
         {
             equipWeapon.Use();
-            anim.SetTrigger("doSwing");
+            anim.SetTrigger(equipWeapon.type == Weapon.Type.Melee ? "doSwing" : "doShot");
             fireDelay = 0;
         }
+    }
+
+    void Reload()
+    {
+        if (equipWeapon == null)
+            return;
+
+        if (equipWeapon.type == Weapon.Type.Melee)
+            return;
+        if (ammo == 0)
+            return;
+
+        if (rDown && !isJump && !isDodge && !isSwap && !isFireReady)
+        {
+            anim.SetTrigger("doReload");
+            isReload = true;
+
+            Invoke("ReloadOut", 3f);
+        }
+    }
+
+    void ReloadOut()
+    {
+        int reAmmo = ammo < equipWeapon.maxAmmo ? ammo : equipWeapon.maxAmmo;
+        equipWeapon.curAmmo = reAmmo;
+        ammo -= reAmmo;
+        isReload = false;
     }
 
     void Dodge()
