@@ -75,7 +75,7 @@ public class Test : MonoBehaviour
         wDown = Input.GetButton("Walk");
         jDown = Input.GetButtonDown("Jump");
         fDown = Input.GetButton("Fire1");
-        rDown = Input.GetButtonDown("Reload");
+        rDown = Input.GetKeyDown(KeyCode.R);
         iDown = Input.GetKeyDown(KeyCode.E);
         sDown1 = Input.GetKeyDown(KeyCode.Alpha1);
         sDown2 = Input.GetKeyDown(KeyCode.Alpha2);
@@ -154,7 +154,7 @@ public class Test : MonoBehaviour
         if (ammo == 0)
             return;
 
-        if (rDown && !isJump && !isDodge && !isSwap && !isFireReady)
+        if (rDown && !isJump && !isDodge && !isSwap && isFireReady)
         {
             anim.SetTrigger("doReload");
             isReload = true;
