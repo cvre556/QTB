@@ -75,7 +75,7 @@ public class Test : MonoBehaviour
         wDown = Input.GetButton("Walk");
         jDown = Input.GetButtonDown("Jump");
         fDown = Input.GetButton("Fire1");
-        rDown = Input.GetButtonDown("Reload");
+        rDown = Input.GetKeyDown(KeyCode.R);
         iDown = Input.GetKeyDown(KeyCode.E);
         sDown1 = Input.GetKeyDown(KeyCode.Alpha1);
         sDown2 = Input.GetKeyDown(KeyCode.Alpha2);
@@ -92,7 +92,7 @@ public class Test : MonoBehaviour
         if (isSwap || isReload || !isFireReady)
             moveVec = Vector3.zero;
 
-        if(!isBorder)
+        if (!isBorder)
             transform.position += moveVec * speed * (wDown ? 0.3f : 1f) * Time.deltaTime;
 
         anim.SetBool("isRun", moveVec != Vector3.zero);
@@ -136,7 +136,7 @@ public class Test : MonoBehaviour
         fireDelay += Time.deltaTime;
         isFireReady = equipWeapon.rate < fireDelay;
 
-        if(fDown && isFireReady && !isDodge && !isSwap)
+        if (fDown && isFireReady && !isDodge && !isSwap)
         {
             equipWeapon.Use();
             anim.SetTrigger(equipWeapon.type == Weapon.Type.Melee ? "doSwing" : "doShot");
@@ -226,29 +226,7 @@ public class Test : MonoBehaviour
         isSwap = false;
     }
 
-    void Interation()
-    {
-        Debug.Log("iDown: " + iDown);
-        Debug.Log("nearObject: " + nearObject);
-
-        if (iDown && nearObject != null && !isJump && !isDodge)
-        {
-            if (nearObject.tag == "Weapon")
-            {
-                Item item = nearObject.GetComponent<Item>();
-                int weaponIndex = item.value;
-                hasWeapons[weaponIndex] = true;
-
-                if (equipWeapon == nearObject)
-                {
-                    equipWeapon = null;
-                    equipWeaponIndex = -1;
-                }
-
-                Destroy(nearObject);
-            }
-        }
-    }
+    
     void FreezeRotation()
     {
         rigid.angularVelocity = Vector3.zero;
@@ -274,10 +252,10 @@ public class Test : MonoBehaviour
     }
     void OnTriggerEnter(Collider other)
     {
-        if(other.tag == "Item")
+        if (other.tag == "Item")
         {
             Item item = other.GetComponent<Item>();
-            switch(item.type)
+            switch (item.type)
             {
                 case Item.Type.Ammo:
                     ammo += item.value;
@@ -308,15 +286,47 @@ public class Test : MonoBehaviour
 
     void OnTriggerStay(Collider other)
     {
-        if (other.tag == "Weapon")
-            nearObject = other.gameObject;
-
-        Debug.Log(nearObject.name);
+        if (other != null && other.CompareTag("Weapon"))
+        {
+            // 이미 nearObject가 할당되어 있고 같은 오브젝트면 무시
+            if (nearObject == null || nearObject != other.gameObject)
+            {
+                nearObject = other.gameObject;
+            }
+        }
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (other.tag == "Weapon")
+        if (other.CompareTag("Weapon") && nearObject == other.gameObject)
+        {
             nearObject = null;
+        }
+    }
+
+    void Interation()
+    {
+        if (iDown && nearObject != null && !isJump && !isDodge)
+        {
+            // 이미 Destroy되었는지 체크
+            if (nearObject.CompareTag("Weapon"))
+            {
+                Item item = nearObject.GetComponent<Item>();
+                if (item != null)
+                {
+                    int weaponIndex = item.value;
+                    hasWeapons[weaponIndex] = true;
+
+                    if (equipWeapon != null && equipWeapon.gameObject == nearObject)
+                    {
+                        equipWeapon = null;
+                        equipWeaponIndex = -1;
+                    }
+
+                    Destroy(nearObject);
+                    nearObject = null;
+                }
+            }
+        }
     }
 }
