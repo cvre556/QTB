@@ -6,12 +6,13 @@ public class Test : MonoBehaviour
     public float speed;
     public GameObject[] weapons;
     public bool[] hasWeapons;
-    public GameObject[] grenade;
+    public GameObject[] grenades;
 
     public int ammo;
     public int coin;
     public int health;
     public int hasGrenades;
+    public GameObject grenadeObj;
     public Camera followCamera;
 
     public int maxAmmo;
@@ -25,6 +26,7 @@ public class Test : MonoBehaviour
     bool wDown;
     bool jDown;
     bool fDown;
+    bool gDown;
     bool rDown;
     bool iDown;
     bool sDown1;
@@ -61,6 +63,7 @@ public class Test : MonoBehaviour
         Move();
         Turn();
         Jump();
+        Grenade();
         Attack();
         Reload();
         Dodge();
@@ -75,6 +78,7 @@ public class Test : MonoBehaviour
         wDown = Input.GetButton("Walk");
         jDown = Input.GetButtonDown("Jump");
         fDown = Input.GetButton("Fire1");
+        gDown = Input.GetButtonDown("Fire2");
         rDown = Input.GetKeyDown(KeyCode.R);
         iDown = Input.GetKeyDown(KeyCode.E);
         sDown1 = Input.GetKeyDown(KeyCode.Alpha1);
@@ -125,6 +129,31 @@ public class Test : MonoBehaviour
             anim.SetBool("isJump", true);
             anim.SetTrigger("doJump");
             isJump = true;
+        }
+    }
+
+    void Grenade()
+    {
+        if (hasGrenades == 0)
+            return;
+
+        if(gDown && !isReload && !isSwap)
+        {
+            Ray ray = followCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit ratHit;
+            if (Physics.Raycast(ray, out ratHit, 100))
+            {
+                Vector3 nextVec = ratHit.point - transform.position;
+                nextVec.y = 0;
+
+                GameObject instantGrenade = Instantiate(grenadeObj, transform.position, transform.rotation);
+                Rigidbody rigidGrenade = instantGrenade.GetComponent<Rigidbody>();
+                rigidGrenade.AddForce(nextVec, ForceMode.Impulse);
+                rigidGrenade.AddTorque(Vector3.back * 10, ForceMode.Impulse);
+
+                hasGrenades--;
+                grenades[hasGrenades].SetActive(false);
+            }
         }
     }
 
@@ -273,7 +302,7 @@ public class Test : MonoBehaviour
                         health = maxHealth;
                     break;
                 case Item.Type.Grenade:
-                    grenade[hasGrenades].SetActive(true);
+                    grenades[hasGrenades].SetActive(true);
                     hasGrenades += item.value;
                     if (hasGrenades > maxHasGrenades)
                         hasGrenades = maxHasGrenades;
