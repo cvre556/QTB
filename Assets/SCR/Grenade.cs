@@ -15,7 +15,7 @@ public class Grenade : MonoBehaviour
    IEnumerator Explosion()
     {
         yield return new WaitForSeconds(3f);
-        rigid.angularVelocity = Vector3.zero;
+        rigid.linearVelocity = Vector3.zero;
         rigid.angularVelocity = Vector3.zero;
         meshObj.SetActive(false);
         effectObj.SetActive(true);
