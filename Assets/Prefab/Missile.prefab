@@ -5002,6 +5002,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damage: 15
+  isMelee: 1
 --- !u!54 &4130904478864335525
 Rigidbody:
   m_ObjectHideFlags: 0

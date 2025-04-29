@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 7769533461613515303}
   m_Layer: 10
   m_Name: Throw Grenade
-  m_TagString: Weapon
+  m_TagString: Item
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
